@@ -274,7 +274,7 @@ public class Promotions
         {
             if (i < cutoff)
             {
-                foreach (MembersType member in standings.ElementAt(i).Entrant.Team.Members)
+                foreach (MemberType member in standings.ElementAt(i).Entrant.Team.Members)
                 {
                     if (member.isAlternate && removeAlternates)
                     {
@@ -288,7 +288,7 @@ public class Promotions
                 }
             } else
             {
-                foreach (MembersType member in standings.ElementAt(i).Entrant.Team.Members)
+                foreach (MemberType member in standings.ElementAt(i).Entrant.Team.Members)
                 {
                     if (member.isAlternate && removeAlternates)
                     {
@@ -334,10 +334,10 @@ public class PhaseType
 {
     public long ID { get; set; }
     public string Name { get; set; }
-    public PhaseGroupsType PhaseGroups { get; set; }
+    public PhaseGroupType PhaseGroups { get; set; }
 }
 
-public class PhaseGroupsType
+public class PhaseGroupType
 {
     public List<PhaseNodeType> Nodes { get; set; }
 }
@@ -366,10 +366,10 @@ public class EntrantType
 
 public class TeamType
 {
-    public List<MembersType> Members { get; set; }
+    public List<MemberType> Members { get; set; }
 }
 
-public class MembersType
+public class MemberType
 {
     public bool isAlternate { get; set; }
     public PlayerType Player { get; set; }

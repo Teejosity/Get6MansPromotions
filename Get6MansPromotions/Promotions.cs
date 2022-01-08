@@ -200,7 +200,7 @@ public class Promotions
         }
 
         if (phaseSet.Count < 2) {
-            throw new Exception("Found an unexpected number of phases. Has the format changed?");
+            throw new Exception("Found an unexpected number of phases. Has the format changed? Got " + phaseSet.Count +  " but expected 2." );
         }
 
         /*

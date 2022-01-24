@@ -283,7 +283,7 @@ public class Promotions
                     }
                     if (day == PromotionRank.A)
                     {
-                        await removeDuplicates(member.Player.Gamertag, promotions, ((int)day) + 1);
+                        await RemoveDuplicates(member.Player.Gamertag, promotions, ((int)day) + 1);
                     }
                     promotions[((int)day) + 1].Add(member.Player.Gamertag);
                 }
@@ -297,7 +297,7 @@ public class Promotions
                     }
                     if (day == PromotionRank.A)
                     {
-                        await removeDuplicates(member.Player.Gamertag, promotions, (int)day);
+                        await RemoveDuplicates(member.Player.Gamertag, promotions, (int)day);
                     }
                     promotions[((int)day)].Add(member.Player.Gamertag);
                 }
@@ -305,7 +305,7 @@ public class Promotions
         }
     }
 
-    private static async Task removeDuplicates(String gamertag, List<string>[] promotions, int new_idx)
+    private static async Task RemoveDuplicates(String gamertag, List<string>[] promotions, int new_idx)
     {
         for (int i = new_idx; i >= 0; i--)
         {

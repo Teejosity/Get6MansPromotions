@@ -191,11 +191,12 @@ public class Promotions
             if (phase.Name.Contains("Day 2", StringComparison.OrdinalIgnoreCase)) {
                 phaseSet.Add(phase);
             }
+            else if (phase.Name.Contains("Tiebreaker", StringComparison.OrdinalIgnoreCase))
+            {
+                //skip for now, maybe add processing later if wanted
+            }
             else if (phase.Name.Contains("Day 3", StringComparison.OrdinalIgnoreCase)) {
                 phaseSet.Add(phase);
-            }
-            else if (phase.Name.Contains("Tiebreaker", StringComparison.OrdinalIgnoreCase)) {
-                //phaseSet.Add(phase);
             }
         }
 
@@ -267,7 +268,7 @@ public class Promotions
 
         if (standings.Count != numPromotingTeams)
         {
-            throw new Exception("Unknown query failure - query returned an incorrect number of teams.");
+            throw new Exception("Unknown query failure - query returned an incorrect number of teams.\nExpected: " + numPromotingTeams + " but got: " + standings.Count);
         }
 
         for (int i = 0; i < standings.Count; i++)

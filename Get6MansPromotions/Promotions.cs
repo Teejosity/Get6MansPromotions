@@ -46,7 +46,7 @@ public class Promotions
         {
             if (phase.Name.Contains("Day 2", StringComparison.OrdinalIgnoreCase))
             {
-                await GetStandings(client, phase.ID, promotions, PromotionRank.BPLUS, 24, 12, removeAlternates);
+                await GetStandings(client, phase.ID, promotions, PromotionRank.BPLUS, 32, 12, removeAlternates);
             }
             else if (phase.Name.Contains("Day 3", StringComparison.OrdinalIgnoreCase))
             {

@@ -8,7 +8,7 @@ public class Promotions
 {
     public static async Task Main(string[] args)
     {
-        using GraphQLHttpClient client = new GraphQLHttpClient("https://api.smash.gg/gql/alpha", new NewtonsoftJsonSerializer());
+        using GraphQLHttpClient client = new GraphQLHttpClient("https://api.start.gg/gql/alpha", new NewtonsoftJsonSerializer());
 
         client.HttpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + Environment.GetEnvironmentVariable("auth"));
 
@@ -44,12 +44,14 @@ public class Promotions
 
         foreach (PhaseType phase in phases)
         {
-            if (phase.Name.Contains("Day 2", StringComparison.OrdinalIgnoreCase))
+            if (phase.Name.Contains("Day 2:", StringComparison.OrdinalIgnoreCase))
             {
+                //Top 32 Open qual BPLUS, Top 12 Open qual A
                 await GetStandings(client, phase.ID, promotions, PromotionRank.BPLUS, 32, 12, removeAlternates);
             }
-            else if (phase.Name.Contains("Day 3", StringComparison.OrdinalIgnoreCase))
+            else if (phase.Name.Contains("Day 3:", StringComparison.OrdinalIgnoreCase))
             {
+                //9th-16th Closed Qual A, Top 8 Closed Qual (aka. Making main event) X
                 await GetStandings(client, phase.ID, promotions, PromotionRank.A, 16, 8, removeAlternates);
             }
         }
@@ -94,7 +96,7 @@ public class Promotions
 
     private static async Task<long> GetEventID(GraphQLHttpClient client)
     {
-        Console.WriteLine("Please enter the name of the tournament, as shown on the smashgg URL. For example: \"rlcs-2021-22-season-fall-split-regional-3-europe\"");
+        Console.WriteLine("Please enter the name of the tournament, as shown on the smashgg URL. For example: \"rlcs-2022-23-fall-open-north-america\"");
 
         string? input = Console.ReadLine();
         //string slug = "rlcs-2021-22-season-fall-split-regional-3-europe";
@@ -188,14 +190,14 @@ public class Promotions
             Console.WriteLine(phase.Name);
             Console.WriteLine();
 
-            if (phase.Name.Contains("Day 2", StringComparison.OrdinalIgnoreCase)) {
+            if (phase.Name.Contains("Day 2:", StringComparison.OrdinalIgnoreCase)) {
                 phaseSet.Add(phase);
             }
             else if (phase.Name.Contains("Tiebreaker", StringComparison.OrdinalIgnoreCase))
             {
                 //skip for now, maybe add processing later if wanted
             }
-            else if (phase.Name.Contains("Day 3", StringComparison.OrdinalIgnoreCase)) {
+            else if (phase.Name.Contains("Day 3:", StringComparison.OrdinalIgnoreCase)) {
                 phaseSet.Add(phase);
             }
         }

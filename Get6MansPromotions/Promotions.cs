@@ -30,7 +30,17 @@ public class Promotions
             removeAlternates = true;
         }
 
-        long eventID = await GetEventID(client);
+        long eventID = 0;
+
+        try
+        {
+            eventID = await GetEventID(client);
+        }
+        catch (GraphQLHttpRequestException e) {
+            Console.WriteLine("Request failed. This is most likely due to not providing a valid start.gg API token. The token should be provided as an environment variable with the name 'auth' (without quotes).");
+            Console.WriteLine(e.Message);
+            Environment.Exit(-1);
+        }
 
         HashSet<PhaseType> phases = await GetPhaseID(client, eventID); //name, id
 

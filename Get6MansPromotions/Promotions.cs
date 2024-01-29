@@ -42,7 +42,7 @@ public class Promotions
             Environment.Exit(-1);
         }
 
-        HashSet<PhaseType> phases = await GetPhaseID(client, eventID); //name, id
+        PhaseType phase = await GetPhaseID(client, eventID); //name, id
 
         List<string>[] promotions = new List<string>[3];
         //0 = BPLUS, 1 = A, 2 = X
@@ -52,19 +52,10 @@ public class Promotions
             promotions[i] = new List<string>();
         }
 
-        foreach (PhaseType phase in phases)
-        {
-            if (phase.Name.Contains("Day 2:", StringComparison.OrdinalIgnoreCase))
-            {
-                //Top 32 Open qual BPLUS, Top 12 Open qual A
-                await GetStandings(client, phase.ID, promotions, PromotionRank.BPLUS, 32, 12, removeAlternates);
-            }
-            else if (phase.Name.Contains("Day 3:", StringComparison.OrdinalIgnoreCase))
-            {
-                //9th-16th Closed Qual A, Top 8 Closed Qual (aka. Making main event) X
-                await GetStandings(client, phase.ID, promotions, PromotionRank.A, 16, 8, removeAlternates);
-            }
-        }
+        //Top 48 Day 3 B+, Top 24 A
+        await GetStandings(client, phase.ID, promotions, PromotionRank.BPLUS, 48, 24, removeAlternates);
+        //Top 16 X (Main Event)
+        await GetStandings(client, phase.ID, promotions, PromotionRank.A, 16, 16, removeAlternates);
 
         string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "Promotions.txt");
         using (StreamWriter sw = new StreamWriter(path))
@@ -162,7 +153,7 @@ public class Promotions
 
     }
 
-    private static async Task<HashSet<PhaseType>> GetPhaseID(GraphQLHttpClient client, long eventID)
+    private static async Task<PhaseType> GetPhaseID(GraphQLHttpClient client, long eventID)
     {
         var eventQueryRequest = new GraphQLRequest
         {
@@ -192,7 +183,7 @@ public class Promotions
 
         var phases = response.Data.Event.Phases;
 
-        HashSet<PhaseType> phaseSet = new HashSet<PhaseType>();
+        PhaseType d3_phase = new PhaseType();
 
         foreach (PhaseType phase in phases)
         {
@@ -201,19 +192,20 @@ public class Promotions
             Console.WriteLine();
 
             if (phase.Name.Contains("Day 2:", StringComparison.OrdinalIgnoreCase)) {
-                phaseSet.Add(phase);
+                //phaseSet.Add(phase);
+                //NO LONGER NEEDED
             }
             else if (phase.Name.Contains("Tiebreaker", StringComparison.OrdinalIgnoreCase))
             {
                 //skip for now, maybe add processing later if wanted
             }
             else if (phase.Name.Contains("Day 3:", StringComparison.OrdinalIgnoreCase)) {
-                phaseSet.Add(phase);
+                d3_phase = phase;
             }
         }
 
-        if (phaseSet.Count < 2) {
-            throw new Exception("Found an unexpected number of phases. Has the format changed? Got " + phaseSet.Count +  " but expected 2." );
+        if (d3_phase == null || d3_phase.Name == null || d3_phase.Name == "") {
+            throw new Exception("Found an unexpected number of phases. Has the format changed?");
         }
 
         /*
@@ -224,7 +216,7 @@ public class Promotions
         }
         */
 
-        return phaseSet;
+        return d3_phase;
     }
 
     private static async Task GetStandings(GraphQLHttpClient client, long phaseID, List<string>[] promotions, PromotionRank day, int numPromotingTeams, int cutoff = 0, bool removeAlternates = true)
@@ -285,7 +277,7 @@ public class Promotions
 
         for (int i = 0; i < standings.Count; i++)
         {
-            if (i < cutoff)
+            if (i < cutoff) //Teams placing "Top [Cuttoff] or better"
             {
                 foreach (MemberType member in standings.ElementAt(i).Entrant.Team.Members)
                 {
@@ -299,7 +291,7 @@ public class Promotions
                     }
                     promotions[((int)day) + 1].Add(member.Player.Gamertag);
                 }
-            } else
+            } else //Teams placing Top [numPromotingTeams] but not Top [Cutoff]
             {
                 foreach (MemberType member in standings.ElementAt(i).Entrant.Team.Members)
                 {

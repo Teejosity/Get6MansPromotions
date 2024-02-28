@@ -52,9 +52,9 @@ public class Promotions
             promotions[i] = new List<string>();
         }
 
-        //Top 48 Day 3 B+, Top 24 A
+        //Top 48 Day 3 B+, Top 24 A => First num is B+ req, 2nd num is A req
         await GetStandings(client, phase.ID, promotions, PromotionRank.BPLUS, 48, 24, removeAlternates);
-        //Top 16 X (Main Event)
+        //Top 16 X (Main Event) //First num is X req, second num is also X req
         await GetStandings(client, phase.ID, promotions, PromotionRank.A, 16, 16, removeAlternates);
 
         string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "Promotions.txt");
@@ -246,6 +246,12 @@ public class Promotions
                                                 isAlternate
                                                 player {
                                                     gamerTag
+                                                    user {
+                                                        authorizations(types: [DISCORD]) {
+                                                            externalId
+                                                            externalUsername
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -285,11 +291,17 @@ public class Promotions
                     {
                         continue;
                     }
+                    string str = member.Player.Gamertag;
+                    if (member.Player.User != null && member.Player.User.Authorizations != null)
+                    { //Testing Grabbing Discord Info
+                        //Console.WriteLine("Rank: " + ((int)day + 1) + " => " + member.Player.User.Authorizations[0].externalId + " (" + member.Player.User.Authorizations[0].externalUsername + ")");
+                        str += " (" + member.Player.User.Authorizations[0].externalId + ")";
+                    }
                     if (day == PromotionRank.A)
                     {
-                        await RemoveDuplicates(member.Player.Gamertag, promotions, ((int)day) + 1);
+                        await RemoveDuplicates(str, promotions, ((int)day) + 1);
                     }
-                    promotions[((int)day) + 1].Add(member.Player.Gamertag);
+                    promotions[((int)day) + 1].Add(str);
                 }
             } else //Teams placing Top [numPromotingTeams] but not Top [Cutoff]
             {
@@ -299,11 +311,17 @@ public class Promotions
                     {
                         continue;
                     }
+                    string str = member.Player.Gamertag;
+                    if (member.Player.User != null && member.Player.User.Authorizations != null)
+                    { //Testing Grabbing Discord Info
+                        //Console.WriteLine("Rank: " + ((int)day + 1) + " => " + member.Player.User.Authorizations[0].externalId + " (" + member.Player.User.Authorizations[0].externalUsername + ")");
+                        str += " (" + member.Player.User.Authorizations[0].externalId + ")";
+                    }
                     if (day == PromotionRank.A)
                     {
-                        await RemoveDuplicates(member.Player.Gamertag, promotions, (int)day);
+                        await RemoveDuplicates(str, promotions, (int)day);
                     }
-                    promotions[((int)day)].Add(member.Player.Gamertag);
+                    promotions[((int)day)].Add(str);
                 }
             }
         }
@@ -383,6 +401,18 @@ public class MemberType
 public class PlayerType
 {
     public String Gamertag { get; set; }
+    public UserType User { get; set; }
+}
+
+public class UserType
+{
+    public List<AuthorizationType> Authorizations { get; set; }
+}
+
+public class AuthorizationType
+{
+    public String externalId { get; set; }
+    public String externalUsername { get; set; }
 }
 
 public enum PromotionRank

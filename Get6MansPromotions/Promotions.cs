@@ -31,10 +31,11 @@ public class Promotions
         }
 
         long eventID = 0;
+        Region region = Region.UNKNOWN;
 
         try
         {
-            eventID = await GetEventID(client);
+            (eventID, region) = await GetEventID(client);
         }
         catch (GraphQLHttpRequestException e) {
             Console.WriteLine("Request failed. This is most likely due to not providing a valid start.gg API token. The token should be provided as an environment variable with the name 'auth' (without quotes).");
@@ -52,10 +53,33 @@ public class Promotions
             promotions[i] = new List<string>();
         }
 
+        int BPLUS_criteria = 0;
+        int A_criteria = 0;
+        int X_criteria = 0;
+
+        if (region == Region.NA || region == Region.UNKNOWN)
+        {
+            if (region == Region.UNKNOWN)
+            {
+                Console.WriteLine("Specified region is unknown/unsupported. Defaulting to NA region behavior.");
+                //or maybe just error here
+                region = Region.NA;
+            }
+            BPLUS_criteria = 48;
+            A_criteria = 24;
+            X_criteria = 16;
+        }
+        else if (region == Region.EU)
+        {
+            BPLUS_criteria = 64;
+            A_criteria = 32;
+            X_criteria = 16;
+        }
+
         //Top 48 Day 3 B+, Top 24 A => First num is B+ req, 2nd num is A req
-        await GetStandings(client, phase.ID, promotions, PromotionRank.BPLUS, 48, 24, removeAlternates);
+        await GetStandings(client, phase.ID, promotions, PromotionRank.BPLUS, BPLUS_criteria, A_criteria, removeAlternates, region);
         //Top 16 X (Main Event) //First num is X req, second num is also X req
-        await GetStandings(client, phase.ID, promotions, PromotionRank.A, 16, 16, removeAlternates);
+        await GetStandings(client, phase.ID, promotions, PromotionRank.A, X_criteria, X_criteria, removeAlternates, region);
 
         string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "Promotions.txt");
         using (StreamWriter sw = new StreamWriter(path))
@@ -95,7 +119,7 @@ public class Promotions
 
     }
 
-    private static async Task<long> GetEventID(GraphQLHttpClient client)
+    private static async Task<(long, Region)> GetEventID(GraphQLHttpClient client)
     {
         Console.WriteLine("Please enter the name of the tournament, as shown on the smashgg URL. For example: \"rlcs-2022-23-fall-open-north-america\"");
 
@@ -149,7 +173,22 @@ public class Promotions
             throw new Exception("Unable to find valid event to pull from. Ensure the provided string is correct.");
         }
 
-        return (long) id;
+        Region region;
+
+        if (input.Contains("europe", StringComparison.OrdinalIgnoreCase))
+        {
+            region = Region.EU;
+        }
+        else if (input.Contains("north-america", StringComparison.OrdinalIgnoreCase))
+        {
+            region = Region.NA;
+        }
+        else
+        {
+            region = Region.UNKNOWN;
+        }
+
+        return ((long) id, region);
 
     }
 
@@ -219,11 +258,14 @@ public class Promotions
         return d3_phase;
     }
 
-    private static async Task GetStandings(GraphQLHttpClient client, long phaseID, List<string>[] promotions, PromotionRank day, int numPromotingTeams, int cutoff = 0, bool removeAlternates = true)
+    private static async Task GetStandings(GraphQLHttpClient client, long phaseID, List<string>[] promotions, PromotionRank day, int numPromotingTeams, int cutoff = 0, bool removeAlternates = true, Region region = Region.NA)
     {
-        var phaseQueryRequest = new GraphQLRequest
+        var phaseQueryRequest = new GraphQLRequest();
+        if (region == Region.NA)
         {
-            Query = @"
+            phaseQueryRequest = new GraphQLRequest
+            {
+                Query = @"
             query PhaseQuery($id: ID, $numTeams: Int, $sort: String) {
 		        phase(id: $id){
 			        name
@@ -262,14 +304,65 @@ public class Promotions
                     }
 	            }
             }",
-            OperationName = "PhaseQuery",
-            Variables = new
+                OperationName = "PhaseQuery",
+                Variables = new
+                {
+                    id = phaseID,
+                    numTeams = numPromotingTeams,
+                    sort = "placement"
+                }
+            };
+        }
+        //if EU:
+        if (region == Region.EU)
+        {
+            phaseQueryRequest = new GraphQLRequest
             {
-                id = phaseID,
-                numTeams = numPromotingTeams,
-                sort = "placement"
-            }
-        };
+                Query = @"
+            query PhaseQuery($id: ID, $numTeams: Int, $sort: String) {
+		        phase(id: $id){
+			        name
+    	            phaseGroups(query: {
+                        page: 1
+                        perPage: 1
+                    }) {
+      	                nodes {
+                            standings(query: {
+      		                    perPage: $numTeams,
+      		                    page: 1,
+                                sortBy: $sort
+                            }){
+      		                    nodes {
+        		                    placement
+        		                    entrant {
+          		                        name
+                                        team {
+                                            members(status: ACCEPTED) {
+                                                isAlternate
+                                                player {
+                                                    gamerTag
+                                                }
+                                            }
+                                        }
+                                    }
+      		                    }
+    		                }
+                        }
+                    }
+	            }
+            }",
+                OperationName = "PhaseQuery",
+                Variables = new
+                {
+                    id = phaseID,
+                    numTeams = numPromotingTeams,
+                    sort = "placement"
+                }
+            };
+        }
+
+
+
         //Gets top "numPromotingTeams" teams.
 
         var response = await client.SendQueryAsync(phaseQueryRequest, () => new { Phase = new PhaseType() });
@@ -418,4 +511,9 @@ public class AuthorizationType
 public enum PromotionRank
 {
     BPLUS = 0, A = 1, X = 2
+}
+
+public enum Region
+{
+    NA = 0, EU = 1, UNKNOWN = 2
 }
